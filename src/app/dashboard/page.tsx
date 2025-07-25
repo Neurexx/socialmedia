@@ -27,6 +27,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [followingUsers, setFollowingUsers] = useState<User[]>([]);
+  const [notFollowingUsers, setNotFollowingUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'timeline' | 'create' | 'users'>('timeline');
   const [socketConnected, setSocketConnected] = useState(false);
@@ -107,8 +109,29 @@ export default function DashboardPage() {
 
   const loadUsers = async () => {
     try {
-      const response = await userAPI.getUsers();
-      setUsers(response.data);
+      loadFollowingUsers()
+      loadNotFollowingUsers()
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    }
+  };
+
+  const loadFollowingUsers = async () => {
+    try {
+      console.log("following:",user)
+      const response = await userAPI.getFollowingUsers(user!.id);
+      setFollowingUsers(response.data);
+      console.log('👥 Users loaded:', response.data.length, 'users');
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    }
+  };
+
+    const loadNotFollowingUsers = async () => {
+    try {
+      console.log("not following:",user)
+      const response = await userAPI.getNotFollowingUsers(user!.id);
+      setNotFollowingUsers(response.data);
       console.log('👥 Users loaded:', response.data.length, 'users');
     } catch (err) {
       console.error('Failed to load users:', err);
@@ -138,7 +161,14 @@ export default function DashboardPage() {
   const handleFollowUser = async (userId: string) => {
     try {
       await userAPI.followUser(userId);
-      loadUsers(); // Refresh users list
+      // loadUsers(); // Refresh users list
+      const userToFollow = notFollowingUsers.find(user => user._id === userId);
+    
+    if (userToFollow) {
+      // Remove from notFollowingUsers and add to followingUsers
+      setNotFollowingUsers(prev => prev.filter(user => user._id !== userId));
+      setFollowingUsers(prev => [...prev, userToFollow]);
+    }
       console.log('✅ Followed user:', userId);
     } catch (err: any) {
       console.error('Failed to follow user:', err);
@@ -148,8 +178,17 @@ export default function DashboardPage() {
   const handleUnfollowUser = async (userId: string) => {
     try {
       await userAPI.unfollowUser(userId);
-      loadUsers(); // Refresh users list
+      // loadUsers(); // Refresh users list
       console.log('✅ Unfollowed user:', userId);
+      // Find the user in followingUsers
+      console.log(followingUsers)
+    const userToUnfollow = followingUsers.find(user => user._id === userId);
+    
+    if (userToUnfollow) {
+      // Remove from followingUsers and add to notFollowingUsers
+      setFollowingUsers(prev => prev.filter(user => user._id !== userId));
+      setNotFollowingUsers(prev => [...prev, userToUnfollow]);
+    }
     } catch (err: any) {
       console.error('Failed to unfollow user:', err);
     }
@@ -377,45 +416,84 @@ export default function DashboardPage() {
                   <h2 className="text-xl font-semibold">Discover Users</h2>
                   <p className="text-gray-600">Find and follow other users</p>
                 </div>
-                <div className="divide-y">
-                  {users.length === 0 ? (
-                    <div className="p-6 text-center text-gray-500">
-                      No other users found.
-                    </div>
-                  ) : (
-                    users.map((otherUser) => (
-                      <div key={otherUser._id} className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">
-                              {otherUser.username[0].toUpperCase()}
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-medium text-gray-900">
-                                {otherUser.username}
-                              </h3>
-                              <p className="text-sm text-gray-500">{otherUser.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleFollowUser(otherUser._id)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
-                            >
-                              Follow
-                            </button>
-                            <button
-                              onClick={() => handleUnfollowUser(otherUser._id)}
-                              className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded text-sm"
-                            >
-                              Unfollow
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
+                <div className="space-y-6">
+  {/* Following Section */}
+  <div className="bg-white rounded-lg shadow">
+    <div className="px-6 py-4 border-b border-gray-200">
+      <h2 className="text-xl font-semibold text-gray-900">Following ({followingUsers.length})</h2>
+    </div>
+    <div className="divide-y">
+      {followingUsers.length === 0 ? (
+        <div className="p-6 text-center text-gray-500">
+          You&apos;re not following anyone yet.
+        </div>
+      ) : (
+        followingUsers.map((user) => (
+          <div key={user._id} className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">
+                  {user.username[0].toUpperCase()}
                 </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {user.username}
+                  </h3>
+                  <p className="text-sm text-gray-500">{user.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleUnfollowUser(user._id)}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded text-sm"
+              >
+                Unfollow
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+
+  {/* Non-Following Section */}
+  <div className="bg-white rounded-lg shadow">
+    <div className="px-6 py-4 border-b border-gray-200">
+      <h2 className="text-xl font-semibold text-gray-900">Discover Users ({notFollowingUsers.length})</h2>
+    </div>
+    <div className="divide-y">
+      {notFollowingUsers.length === 0 ? (
+        <div className="p-6 text-center text-gray-500">
+          No new users to discover.
+        </div>
+      ) : (
+        notFollowingUsers.map((user) => (
+          <div key={user._id} className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold">
+                  {user.username[0].toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {user.username}
+                  </h3>
+                  <p className="text-sm text-gray-500">{user.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleFollowUser(user._id)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+              >
+                Follow
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+</div>
+                
               </div>
             )}
           </div>

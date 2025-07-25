@@ -30,6 +30,10 @@ export const postAPI = {
 
 export const userAPI = {
   getUsers: () => api.get('/users'),
+    getFollowingUsers: (userId: string) => api.get(`/users/${userId}/following`),
+    getNotFollowingUsers: (userId: string) => api.get(`/users/${userId}/not-following`),
+
+
   followUser: (userId: string) =>{ api.post(`/users/${userId}/follow`)
 console.log("target",userId)},
   unfollowUser: (userId: string) => api.delete(`/users/${userId}/follow`),
