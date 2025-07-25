@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -30,6 +30,7 @@ export const postAPI = {
 
 export const userAPI = {
   getUsers: () => api.get('/users'),
-  followUser: (userId: string) => api.post(`/users/${userId}/follow`),
+  followUser: (userId: string) =>{ api.post(`/users/${userId}/follow`)
+console.log("target",userId)},
   unfollowUser: (userId: string) => api.delete(`/users/${userId}/follow`),
 };
