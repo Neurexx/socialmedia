@@ -22,7 +22,7 @@ interface User {
 }
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading} = useAuth();
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -38,6 +38,10 @@ export default function DashboardPage() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
+
+    if(isLoading)
+      return;
+
     if (!user) {
       router.push('/login');
       return;
@@ -87,7 +91,7 @@ export default function DashboardPage() {
       socketService.disconnect();
       setSocketConnected(false);
     };
-  }, [user, router]);
+  }, [user, router, isLoading]);
 
   const loadTimeline = async () => {
     try {
@@ -155,7 +159,16 @@ export default function DashboardPage() {
     router.push('/login');
   };
 
-  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) return null;
 
