@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { postAPI, userAPI } from '../../lib/api';
 import { socketService } from '../../lib/socket';
+import {toast} from "sonner"
 
 interface Post {
   _id: string;
@@ -74,8 +75,9 @@ export default function DashboardPage() {
 
     // Setup WebSocket notifications
     socketService.onNotification((data) => {
-        console.log("hello")
-      console.log('📧 Received notification:', data);
+      
+      toast(<div className='text-zinc-900 p-2 text-2xl'>{data.message}</div>)
+
       setNotifications(prev => [data.message, ...prev.slice(0, 9)]);
       
       // Reload timeline when new posts are created
@@ -241,7 +243,7 @@ export default function DashboardPage() {
               </ul>
             </nav>
 
-            {/* Notifications */}
+            {/* Notifications
             <div className="mt-6 bg-white rounded-lg shadow p-4">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-semibold text-gray-900">Recent Notifications</h3>
@@ -265,7 +267,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
 
           {/* Main Content */}
